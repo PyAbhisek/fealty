@@ -53,3 +53,14 @@ A simple Bug Tracker Application that allows developers and managers to manage t
 ```bash
 git clone https://github.com/your-repo/bug-tracker.git
 cd bug-tracker
+```
+
+### 2. **Install Dependencies** 
+```bash
+npm install
+```
+
+### 3. ** Run the Application** 
+```bash
+npm run dev
+```
