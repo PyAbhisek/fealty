@@ -38,9 +38,8 @@ const Column = ({ column, tasks, columns, onTaskMove, onTaskDelete }: ColumnProp
     const [localTasks, setLocalTasks] = useState<Task[]>([]);
 
     useEffect(() => {
-        // Update localTasks when taskIds or tasks change
         setLocalTasks(column.taskIds.map((taskId) => tasks[taskId]).filter(Boolean));
-    }, [column.taskIds, tasks]); // Watches for changes in tasks or taskIds
+    }, [column.taskIds, tasks]); 
 
     const openModal = (task: Task) => {
         setSelectedTask(task);
