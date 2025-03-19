@@ -28,7 +28,7 @@ interface ColumnProps {
   column: Column;
   tasks: { [key: string]: Task };
   columns: { [key: string]: Column };
-  onTaskMove: (taskId: string, sourceColumnId: string, targetColumnId: string) => void;
+  onTaskMove: (taskId: string, sourceColumnId: string, targetColumnId: string,title:string,description:string) => void;
 }
 
 const Column = ({ column, tasks, columns, onTaskMove }: ColumnProps) => {
@@ -45,10 +45,10 @@ const Column = ({ column, tasks, columns, onTaskMove }: ColumnProps) => {
     setIsModalOpen(false);
   };
 
-  const handleStatusChange = (taskId: string, newStatus: string) => {
+  const handleStatusChange = (taskId: string, newStatus: string,title:string,description:string) => {
     const currentColumnId = column.id;
     if (currentColumnId !== newStatus) {
-      onTaskMove(taskId, currentColumnId, newStatus);
+      onTaskMove(taskId, currentColumnId, newStatus,title,description);
     }
   };
 
