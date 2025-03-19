@@ -2,14 +2,15 @@
 import userIcon from '../Assests/merge.png'
 import Image from "next/image";
 import { useState } from "react";
-
+import { boardData } from "../lib/data";
+import Column from './Column';
 
 type BoardProps = {
     role: string;
-  };
+};
 
 const Board = ({ role }: BoardProps) => {
-    const [data, setData] = useState();
+    const [data, setData] = useState(boardData);
 
     return (
         <div className="text-white h-[100vh] bg-[#1F2024] flex flex-col items-center">
@@ -26,7 +27,10 @@ const Board = ({ role }: BoardProps) => {
             <h1>Welcome, {role === 'developer' ? 'Developer' : 'Manager'}!</h1>
             <div className="flex gap-[2rem] overflow-x-scroll no-scrollbar w-[88%] mt-[2rem]">
 
-               
+                {data.columnOrder.map((columnId) => {
+                    const column = data.columns[columnId as keyof typeof data.columns];
+                    return <Column key={column.id} column={column} tasks={data.tasks} />;
+                })}
 
             </div>
         </div>
