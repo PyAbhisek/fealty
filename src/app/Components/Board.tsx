@@ -5,6 +5,8 @@ import { useContext, useState, useEffect } from "react";
 import Column from './Column';
 import { AppContext } from '../context/contextProvider';
 import NewBugPopup from './NewBugPopup';
+import Chart from './chart';
+import { BarChart3 } from 'lucide-react';
 
 type BoardProps = {
     role: string;
@@ -13,7 +15,9 @@ type BoardProps = {
 const Board = ({ role }: BoardProps) => {
     const context = useContext(AppContext);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [isDashboardOpen, setIsDashboardOpen] = useState(false);
     const [filteredData, setFilteredData] = useState<any>(null);
+    const [bugFilter, setBugFilter] = useState("all");
     const [dateFilter, setDateFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
     
@@ -21,21 +25,37 @@ const Board = ({ role }: BoardProps) => {
         throw new Error("AppContext must be used within a AppContextProvider");
     }
     const { data, setData } = context;
+
+    // Apply filters whenever data or filter states change
     useEffect(() => {
         if (!data) return;
         
         let filteredResult = { ...data };
         let filteredTasks = { ...data.tasks };
-    
+        
+        // Filter by bug assignment
+        if (bugFilter === "my") {
+            // Assuming we have a user ID or name, this would filter by current user
+            // For now, let's assume the current user is "John Doe"
+            filteredTasks = Object.fromEntries(
+                Object.entries(filteredTasks).filter(([_, task]) => task.assignee === "John Doe")
+            );
+        } else if (bugFilter === "unassigned") {
+            filteredTasks = Object.fromEntries(
+                Object.entries(filteredTasks).filter(([_, task]) => !task.assignee || task.assignee.trim() === "")
+            );
+        }
+        
+        // Filter by date
         if (dateFilter === "today") {
             const today = new Date().toISOString().split('T')[0];
             filteredTasks = Object.fromEntries(
-                Object.entries(filteredTasks).filter(([_, task]) => task?.date === today)
+                Object.entries(filteredTasks).filter(([_, task]) => task.date === today)
             );
         } else if (dateFilter === "thisWeek") {
             const today = new Date();
             const weekStart = new Date(today);
-            weekStart.setDate(today.getDate() - today.getDay()); 
+            weekStart.setDate(today.getDate() - today.getDay()); // Start of the week (Sunday)
             
             filteredTasks = Object.fromEntries(
                 Object.entries(filteredTasks).filter(([_, task]) => {
@@ -77,7 +97,7 @@ const Board = ({ role }: BoardProps) => {
         filteredResult.columns = updatedColumns;
         
         setFilteredData(filteredResult);
-    }, [data, dateFilter, priorityFilter]);
+    }, [data, bugFilter, dateFilter, priorityFilter]);
 
     const handleTaskMove = (
         taskId: string,
@@ -197,14 +217,31 @@ const Board = ({ role }: BoardProps) => {
                     Bug Tracker
                 </div>
                 <div className="utility flex gap-[0.5rem] items-center">
-                    <div className="flex items-center justify-between ">
+                    <div className="flex items-center justify-between">
                         <div className="flex gap-2 flex-wrap">
                             <button onClick={() => setIsPopupOpen(true)}
                                 className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-md transition-colors flex items-center gap-1">
                                 <span>+</span> New Bug
                             </button>
                             
-                          
+                            {/* Dashboard Button */}
+                            <button 
+                                onClick={() => setIsDashboardOpen(true)}
+                                className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded-md transition-colors flex items-center gap-1"
+                            >
+                                <BarChart3 size={16} /> Dashboard
+                            </button>
+                            
+                            {/* Bug Filter */}
+                            <select 
+                                value={bugFilter}
+                                onChange={(e) => setBugFilter(e.target.value)}
+                                className="px-3 py-1 bg-gray-800 rounded-md border border-gray-700 focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="all">All Bugs</option>
+                                <option value="my">My Bugs</option>
+                                <option value="unassigned">Unassigned</option>
+                            </select>
                             
                             {/* Date Filter */}
                             <select 
@@ -260,6 +297,12 @@ const Board = ({ role }: BoardProps) => {
                     onSubmit={handleAddTask}
                 />
             )}
+            
+            <Chart 
+                isOpen={isDashboardOpen}
+                onClose={() => setIsDashboardOpen(false)}
+                data={data}
+            />
         </div>
     );
 };
