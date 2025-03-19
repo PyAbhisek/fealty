@@ -1,7 +1,7 @@
 "use client";
 import userIcon from '../Assests/merge.png';
 import Image from "next/image";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import Column from './Column';
 import { AppContext } from '../context/contextProvider';
 import NewBugPopup from './NewBugPopup';
@@ -13,10 +13,71 @@ type BoardProps = {
 const Board = ({ role }: BoardProps) => {
     const context = useContext(AppContext);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [filteredData, setFilteredData] = useState<any>(null);
+    const [dateFilter, setDateFilter] = useState("all");
+    const [priorityFilter, setPriorityFilter] = useState("all");
+    
     if (!context) {
         throw new Error("AppContext must be used within a AppContextProvider");
     }
     const { data, setData } = context;
+    useEffect(() => {
+        if (!data) return;
+        
+        let filteredResult = { ...data };
+        let filteredTasks = { ...data.tasks };
+    
+        if (dateFilter === "today") {
+            const today = new Date().toISOString().split('T')[0];
+            filteredTasks = Object.fromEntries(
+                Object.entries(filteredTasks).filter(([_, task]) => task?.date === today)
+            );
+        } else if (dateFilter === "thisWeek") {
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay()); 
+            
+            filteredTasks = Object.fromEntries(
+                Object.entries(filteredTasks).filter(([_, task]) => {
+                    const taskDate = new Date(task.date);
+                    return taskDate >= weekStart && taskDate <= today;
+                })
+            );
+        } else if (dateFilter === "thisMonth") {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            filteredTasks = Object.fromEntries(
+                Object.entries(filteredTasks).filter(([_, task]) => {
+                    const taskDate = new Date(task.date);
+                    return taskDate >= monthStart && taskDate <= today;
+                })
+            );
+        }
+        
+        // Filter by priority
+        if (priorityFilter !== "all") {
+            filteredTasks = Object.fromEntries(
+                Object.entries(filteredTasks).filter(([_, task]) => task.priority === priorityFilter)
+            );
+        }
+        
+        // Update column taskIds based on filtered tasks
+        const updatedColumns = { ...data.columns };
+        Object.keys(updatedColumns).forEach(columnId => {
+            updatedColumns[columnId] = {
+                ...updatedColumns[columnId],
+                taskIds: updatedColumns[columnId].taskIds.filter(taskId => 
+                    filteredTasks.hasOwnProperty(taskId)
+                )
+            };
+        });
+        
+        filteredResult.tasks = filteredTasks;
+        filteredResult.columns = updatedColumns;
+        
+        setFilteredData(filteredResult);
+    }, [data, dateFilter, priorityFilter]);
 
     const handleTaskMove = (
         taskId: string,
@@ -25,7 +86,6 @@ const Board = ({ role }: BoardProps) => {
         title: string,
         description: string
     ) => {
-
         // Update the task with new properties
         const updatedTask = {
             ...data.tasks[taskId],
@@ -68,9 +128,7 @@ const Board = ({ role }: BoardProps) => {
     const handleTaskDelete = (taskId: string, columnId: string) => {
         console.log("Deleting task:", taskId, "from column:", columnId);
 
-
         const { [taskId]: deletedTask, ...remainingTasks } = data.tasks;
-
 
         const updatedColumns = { ...data.columns };
 
@@ -88,7 +146,6 @@ const Board = ({ role }: BoardProps) => {
         };
         setData(newData);
     };
-
 
     const handleAddTask = (task: {
         content: string;
@@ -134,48 +191,62 @@ const Board = ({ role }: BoardProps) => {
     };
 
     return (
-        <div className="text-white h-[100vh] bg-[#1F2024] flex flex-col  items-center">
+        <div className="text-white h-[100vh] bg-[#1F2024] flex flex-col items-center">
             <div className="header border-b py-[0.5rem] px-[2rem] border-[white] flex items-center justify-between w-[95%]">
                 <div className="Logo text-[2rem] font-bold">
                     Bug Tracker
                 </div>
                 <div className="utility flex gap-[0.5rem] items-center">
                     <div className="flex items-center justify-between ">
-                        <div className="flex gap-2">
-                            <button    onClick={() => setIsPopupOpen(true)}
-                            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-md transition-colors flex items-center gap-1">
+                        <div className="flex gap-2 flex-wrap">
+                            <button onClick={() => setIsPopupOpen(true)}
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-md transition-colors flex items-center gap-1">
                                 <span>+</span> New Bug
                             </button>
-                            <select className="px-3 py-1 bg-gray-800 rounded-md border border-gray-700 focus:outline-none focus:border-blue-500">
-                                <option value="all">All Bugs</option>
-                                <option value="my">My Bugs</option>
-                                <option value="unassigned">Unassigned</option>
+                            
+                          
+                            
+                            {/* Date Filter */}
+                            <select 
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value)}
+                                className="px-3 py-1 bg-gray-800 rounded-md border border-gray-700 focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="all">All Dates</option>
+                                <option value="today">Today</option>
+                                <option value="thisWeek">This Week</option>
+                                <option value="thisMonth">This Month</option>
+                            </select>
+                            
+                            {/* Priority Filter */}
+                            <select 
+                                value={priorityFilter}
+                                onChange={(e) => setPriorityFilter(e.target.value)}
+                                className="px-3 py-1 bg-gray-800 rounded-md border border-gray-700 focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="all">All Priorities</option>
+                                <option value="High">High Priority</option>
+                                <option value="Medium">Medium Priority</option>
+                                <option value="Low">Low Priority</option>
                             </select>
                         </div>
                     </div>
 
-                    <input
-                        type="text"
-                        placeholder="Search for bugs"
-                        className="w-[25rem] border py-[.4rem] px-[1rem] rounded-md bg-transparent border-gray-600 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
                     <div className="ml-2">
                         <Image src={userIcon} className="w-[2rem] h-auto rounded-full" alt="User" />
                     </div>
                 </div>
             </div>
 
-
-
             <div className="flex gap-[2rem] overflow-x-auto no-scrollbar w-[88%] mt-[2rem] pb-4">
                 {data.columnOrder.map((columnId: any) => {
-                    const column = data.columns[columnId];
+                    const column = filteredData ? filteredData.columns[columnId] : data.columns[columnId];
                     return (
                         <Column
                             key={column.id}
                             column={column}
-                            tasks={data.tasks}
-                            columns={data.columns}
+                            tasks={filteredData ? filteredData.tasks : data.tasks}
+                            columns={filteredData ? filteredData.columns : data.columns}
                             onTaskMove={handleTaskMove}
                             onTaskDelete={handleTaskDelete}
                         />
@@ -190,9 +261,6 @@ const Board = ({ role }: BoardProps) => {
                 />
             )}
         </div>
-
-
-
     );
 };
 
