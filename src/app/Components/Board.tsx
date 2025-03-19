@@ -16,7 +16,7 @@ const Board = ({ role }: BoardProps) => {
 
             <div className="header border-b  py-[0.5rem] px-[2rem] border-[white] flex items-center justify-between w-[95%]">
                 <div className="Logo text-[2rem] font-bold">
-                    Board
+                    Bug Tracker
                 </div>
                 <div className="utility flex gap-[0.5rem]">
                     <input type="text" placeholder="Search for bugs" className="w-[25rem] border py-[.4rem] px-[1rem] rounded-md" />
