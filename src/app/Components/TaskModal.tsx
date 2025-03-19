@@ -72,7 +72,7 @@ const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange, onDeleteTas
     };
 
     return (
-        <div className="fixed z-[1000] inset-0 flex items-center justify-center bg-black bg-opacity-70">
+        <div className="fixed z-[1000] inset-0 flex items-center justify-center bg-black bg-opacity-20">
             <div className="bg-[#1F2024] text-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
     
                 <div className="flex justify-between items-center p-6 border-b border-gray-800">
