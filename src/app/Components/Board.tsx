@@ -5,7 +5,7 @@ import { useContext, useState, useEffect } from "react";
 import Column from './Column';
 import { AppContext } from '../context/contextProvider';
 import NewBugPopup from './NewBugPopup';
-import Chart from './chart';
+import Chart from './Chart';
 import { BarChart3 } from 'lucide-react';
 
 type BoardProps = {
