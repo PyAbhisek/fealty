@@ -29,7 +29,6 @@ const chart = ({ isOpen, onClose, data }) => {
         currentDate.setDate(currentDate.getDate() + 1);
       }
       
-      // Count tasks per day and by status
       return dateRange.map(date => {
         const tasksForDate = Object.values(data.tasks).filter(task => {
           return new Date(task.date) <= new Date(date);
