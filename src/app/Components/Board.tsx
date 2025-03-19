@@ -24,16 +24,16 @@ const Board = ({ role }: BoardProps) => {
         title: string,
         description: string
     ) => {
-        
+       
         // Update the task with new properties
         const updatedTask = {
             ...data.tasks[taskId],
             status: targetColumnId || sourceColumnId,  
-            content: title,        
+            content: title,      
             description: description 
         };
         
-      
+        // Create a copy of the data object
         const newData = {
             ...data,
             tasks: {
@@ -44,7 +44,6 @@ const Board = ({ role }: BoardProps) => {
         
         // Only update columns if the status actually changed
         if (sourceColumnId !== targetColumnId) {
-           
             if (data.columns[sourceColumnId] && data.columns[targetColumnId]) {
                 newData.columns = {
                     ...data.columns,
@@ -63,6 +62,32 @@ const Board = ({ role }: BoardProps) => {
         }
     
         setData(newData);
+    };
+    
+    const handleTaskDelete = (taskId: string, columnId: string) => {
+        console.log("Deleting task:", taskId, "from column:", columnId);
+        
+       
+        const { [taskId]: deletedTask, ...remainingTasks } = data.tasks;
+        
+        
+        const updatedColumns = { ...data.columns };
+        
+        if (updatedColumns[columnId]) {
+            updatedColumns[columnId] = {
+                ...updatedColumns[columnId],
+                taskIds: updatedColumns[columnId].taskIds.filter((id:string) => id !== taskId)
+            };
+        }
+        
+        const newData = {
+            ...data,
+            tasks: remainingTasks,
+            columns: updatedColumns
+        };
+        console.log(newData,"newData")
+        setData(newData);
+        context.setData(newData);
     };
     
     return (
@@ -107,6 +132,7 @@ const Board = ({ role }: BoardProps) => {
                             tasks={data.tasks}
                             columns={data.columns}
                             onTaskMove={handleTaskMove}
+                            onTaskDelete={handleTaskDelete}
                         />
                     );
                 })}

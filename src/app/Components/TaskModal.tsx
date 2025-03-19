@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, MessageSquare } from "lucide-react";
+import { X, MessageSquare, Trash2 } from "lucide-react";
 
 interface Task {
     id: string;
@@ -27,19 +27,22 @@ interface TaskModalProps {
     onClose: () => void;
     columns: { [key: string]: Column };
     onStatusChange: (taskId: string, newStatus: string, newTitle: string, newDescription: string) => void;
+    onDeleteTask: (taskId: string, columnId: string) => void;
 }
 
-const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange }: TaskModalProps) => {
+const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange, onDeleteTask }: TaskModalProps) => {
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
     const [status, setStatus] = useState<string>("");
     const [title, setTitle] = useState<string>("");
     const [description, setDescription] = useState<string>("");
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
     useEffect(() => {
         if (task) {
             setStatus(task.status);
             setTitle(task.content);
             setDescription(task.description);
+            setIsDeleteConfirmOpen(false);
         }
     }, [task]);
 
@@ -55,9 +58,23 @@ const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange }: TaskModal
         onClose();
     };
 
+    const handleDeleteClick = () => {
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const handleCancelDelete = () => {
+        setIsDeleteConfirmOpen(false);
+    };
+
+    const handleConfirmDelete = () => {
+        onDeleteTask(task.id, task.status);
+        onClose();
+    };
+
     return (
         <div className="fixed z-[1000] inset-0 flex items-center justify-center bg-black bg-opacity-70">
             <div className="bg-[#1F2024] text-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    
                 <div className="flex justify-between items-center p-6 border-b border-gray-800">
                     <h2 className="text-xl font-bold">{task.id}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white">
@@ -67,6 +84,7 @@ const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange }: TaskModal
 
                 {/* Modal Body */}
                 <div className="p-6">
+                  
                     <div className="mb-6">
                         <label className="block text-sm font-medium mb-2">Title</label>
                         <textarea
@@ -77,7 +95,7 @@ const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange }: TaskModal
                         />
                     </div>
 
-                    {/* Description - now editable */}
+                    
                     <div className="mb-6">
                         <label className="block text-sm font-medium mb-2">Description</label>
                         <textarea
@@ -175,17 +193,51 @@ const TaskModal = ({ task, isOpen, onClose, columns, onStatusChange }: TaskModal
                 </div>
 
                 {/* Modal Footer */}
-                <div className="flex justify-end p-6 border-t border-gray-800">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg mr-2">
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSaveChanges}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg"
+                <div className="flex justify-between p-6 border-t border-gray-800">
+                    <button 
+                        onClick={handleDeleteClick} 
+                        className="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded-lg flex items-center gap-2"
                     >
-                        Save Changes
+                        <Trash2 size={16} />
+                        Delete Task
                     </button>
+                    <div className="flex">
+                        <button onClick={onClose} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg mr-2">
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSaveChanges}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
                 </div>
+
+                {/* Delete Confirmation Dialog */}
+                {isDeleteConfirmOpen && (
+                    <div className="fixed z-[1100] inset-0 flex items-center justify-center bg-black bg-opacity-80">
+                        <div className="bg-[#1F2024] text-white rounded-lg p-6 w-full max-w-md">
+                            <h3 className="text-xl font-bold mb-4">Delete Task</h3>
+                            <p className="mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
+                            <div className="flex justify-end gap-2">
+                                <button 
+                                    onClick={handleCancelDelete}
+                                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleConfirmDelete}
+                                    className="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded-lg flex items-center gap-2"
+                                >
+                                    <Trash2 size={16} />
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
