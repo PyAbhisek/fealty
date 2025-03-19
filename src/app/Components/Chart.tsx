@@ -2,14 +2,45 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { X } from 'lucide-react';
 
-const chart = ({ isOpen, onClose, data }) => {
-  const [trendData, setTrendData] = useState([]);
+interface Task {
+  date: string;
+  status: 'Pending' | 'pending' | 'In Progress' | 'in-progress' | 'Review' | 'review' | 'Done' | 'done';
+}
+
+interface Column {
+  title: string;
+  bgColor: string;
+  bgDotColor: string;
+  taskIds: string[];
+}
+
+interface ChartData {
+  tasks: Record<string, Task>;
+  columns: Record<string, Column>;
+}
+
+interface ChartProps {
+  isOpen: boolean;
+  onClose: () => void;
+  data: ChartData | null;
+}
+
+interface TrendDataPoint {
+  date: string;
+  'Pending': number;
+  'In Progress': number;
+  'Review': number;
+  'Done': number;
+}
+
+const Chart: React.FC<ChartProps> = ({ isOpen, onClose, data }) => {
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
   
   useEffect(() => {
     if (!data || !data.tasks) return;
     
     // Process data to create daily trend
-    const processData = () => {
+    const processData = (): TrendDataPoint[] => {
       // Extract all dates from tasks
       const allDates = Object.values(data.tasks).map(task => task.date);
       
@@ -21,7 +52,7 @@ const chart = ({ isOpen, onClose, data }) => {
       const endDate = new Date(sortedDates[sortedDates.length - 1]);
       
       // Generate all dates between start and end
-      const dateRange = [];
+      const dateRange: string[] = [];
       const currentDate = new Date(startDate);
       
       while (currentDate <= endDate) {
@@ -90,7 +121,7 @@ const chart = ({ isOpen, onClose, data }) => {
                   itemStyle={{ color: '#fff' }}
                 />
                 <Legend />
-               
+                
                 <Line type="monotone" dataKey="Pending" stroke="#FFC107" strokeWidth={2} />
                 <Line type="monotone" dataKey="In Progress" stroke="#1EA0EC" strokeWidth={2} />
                 <Line type="monotone" dataKey="Review" stroke="#FF5722" strokeWidth={2} />
@@ -101,7 +132,7 @@ const chart = ({ isOpen, onClose, data }) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {Object.entries(data.columns).map(([id, column]) => (
+          {data && Object.entries(data.columns).map(([id, column]) => (
             <div 
               key={id}
               className="rounded-lg p-4"
@@ -123,4 +154,4 @@ const chart = ({ isOpen, onClose, data }) => {
   );
 };
 
-export default chart;
+export default Chart;

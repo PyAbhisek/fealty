@@ -8,16 +8,34 @@ import NewBugPopup from './NewBugPopup';
 import Chart from './Chart';
 import { BarChart3 } from 'lucide-react';
 
+interface Task {
+  id: string;
+  content: string;
+  description: string;
+  status: string;
+  assignee: string;
+  date: string;
+  priority: string;
+  priorityColor: string;
+  comments: any[];
+  attachments: number;
+}
+
+interface AppData {
+  tasks: Record<string, Task>;
+  columns: Record<string, Column>;
+  columnOrder: string[];
+}
+
 type BoardProps = {
-    role: string;
+  role: string;
 };
 
 const Board = ({ role }: BoardProps) => {
     const context = useContext(AppContext);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [isDashboardOpen, setIsDashboardOpen] = useState(false);
-    const [filteredData, setFilteredData] = useState<any>(null);
-    const [bugFilter, setBugFilter] = useState("all");
+    const [filteredData, setFilteredData] = useState<AppData | null>(null);
     const [dateFilter, setDateFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
     
@@ -30,27 +48,15 @@ const Board = ({ role }: BoardProps) => {
     useEffect(() => {
         if (!data) return;
         
-        let filteredResult = { ...data };
+        let filteredResult = { ...data } as AppData;
         let filteredTasks = { ...data.tasks };
         
-        // Filter by bug assignment
-        if (bugFilter === "my") {
-            // Assuming we have a user ID or name, this would filter by current user
-            // For now, let's assume the current user is "John Doe"
-            filteredTasks = Object.fromEntries(
-                Object.entries(filteredTasks).filter(([_, task]) => task.assignee === "John Doe")
-            );
-        } else if (bugFilter === "unassigned") {
-            filteredTasks = Object.fromEntries(
-                Object.entries(filteredTasks).filter(([_, task]) => !task.assignee || task.assignee.trim() === "")
-            );
-        }
         
         // Filter by date
         if (dateFilter === "today") {
             const today = new Date().toISOString().split('T')[0];
             filteredTasks = Object.fromEntries(
-                Object.entries(filteredTasks).filter(([_, task]) => task.date === today)
+                Object.entries(filteredTasks).filter(([_, task]) => (task as any).date === today)
             );
         } else if (dateFilter === "thisWeek") {
             const today = new Date();
@@ -59,7 +65,7 @@ const Board = ({ role }: BoardProps) => {
             
             filteredTasks = Object.fromEntries(
                 Object.entries(filteredTasks).filter(([_, task]) => {
-                    const taskDate = new Date(task.date);
+                    const taskDate = new Date((task as any).date);
                     return taskDate >= weekStart && taskDate <= today;
                 })
             );
@@ -69,7 +75,7 @@ const Board = ({ role }: BoardProps) => {
             
             filteredTasks = Object.fromEntries(
                 Object.entries(filteredTasks).filter(([_, task]) => {
-                    const taskDate = new Date(task.date);
+                    const taskDate = new Date((task as any).date);
                     return taskDate >= monthStart && taskDate <= today;
                 })
             );
@@ -78,7 +84,7 @@ const Board = ({ role }: BoardProps) => {
         // Filter by priority
         if (priorityFilter !== "all") {
             filteredTasks = Object.fromEntries(
-                Object.entries(filteredTasks).filter(([_, task]) => task.priority === priorityFilter)
+                Object.entries(filteredTasks).filter(([_, task]) => (task as any).priority === priorityFilter)
             );
         }
         
@@ -87,8 +93,8 @@ const Board = ({ role }: BoardProps) => {
         Object.keys(updatedColumns).forEach(columnId => {
             updatedColumns[columnId] = {
                 ...updatedColumns[columnId],
-                taskIds: updatedColumns[columnId].taskIds.filter(taskId => 
-                    filteredTasks.hasOwnProperty(taskId)
+                taskIds: updatedColumns[columnId].taskIds.filter((taskId: string) => 
+                    taskId in filteredTasks
                 )
             };
         });
@@ -97,17 +103,19 @@ const Board = ({ role }: BoardProps) => {
         filteredResult.columns = updatedColumns;
         
         setFilteredData(filteredResult);
-    }, [data, bugFilter, dateFilter, priorityFilter]);
+    }, [data, dateFilter, priorityFilter]);
 
     const handleTaskMove = (
         taskId: string,
-        sourceColumnId: keyof typeof data.columns,
+        sourceColumnId: string,
         targetColumnId: string,
         title: string,
         description: string
     ) => {
+        if (!data || !data.tasks[taskId]) return;
+        
         // Update the task with new properties
-        const updatedTask = {
+        const updatedTask: Task = {
             ...data.tasks[taskId],
             status: targetColumnId || sourceColumnId,
             content: title,
@@ -115,7 +123,7 @@ const Board = ({ role }: BoardProps) => {
         };
 
         // Create a copy of the data object
-        const newData = {
+        const newData: AppData = {
             ...data,
             tasks: {
                 ...data.tasks,
@@ -146,6 +154,8 @@ const Board = ({ role }: BoardProps) => {
     };
 
     const handleTaskDelete = (taskId: string, columnId: string) => {
+        if (!data) return;
+        
         console.log("Deleting task:", taskId, "from column:", columnId);
 
         const { [taskId]: deletedTask, ...remainingTasks } = data.tasks;
@@ -159,7 +169,7 @@ const Board = ({ role }: BoardProps) => {
             };
         }
 
-        const newData = {
+        const newData: AppData = {
             ...data,
             tasks: remainingTasks,
             columns: updatedColumns
@@ -173,9 +183,11 @@ const Board = ({ role }: BoardProps) => {
         assignee: string;
         priority: string;
     }) => {
+        if (!data) return;
+        
         const newTaskId = `task-${Date.now()}`;
 
-        const newTask = {
+        const newTask: Task = {
             id: newTaskId,
             content: task.content,
             description: task.description,
@@ -192,7 +204,7 @@ const Board = ({ role }: BoardProps) => {
             attachments: 0
         };
 
-        const newData = {
+        const newData: AppData = {
             ...data,
             tasks: {
                 ...data.tasks,
@@ -232,16 +244,7 @@ const Board = ({ role }: BoardProps) => {
                                 <BarChart3 size={16} /> Dashboard
                             </button>
                             
-                            {/* Bug Filter */}
-                            <select 
-                                value={bugFilter}
-                                onChange={(e) => setBugFilter(e.target.value)}
-                                className="px-3 py-1 bg-gray-800 rounded-md border border-gray-700 focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="all">All Bugs</option>
-                                <option value="my">My Bugs</option>
-                                <option value="unassigned">Unassigned</option>
-                            </select>
+                           
                             
                             {/* Date Filter */}
                             <select 
@@ -276,8 +279,10 @@ const Board = ({ role }: BoardProps) => {
             </div>
 
             <div className="flex gap-[2rem] overflow-x-auto no-scrollbar w-[88%] mt-[2rem] pb-4">
-                {data.columnOrder.map((columnId: any) => {
+                {data && data.columnOrder.map((columnId: string) => {
                     const column = filteredData ? filteredData.columns[columnId] : data.columns[columnId];
+                    if (!column) return null;
+                    
                     return (
                         <Column
                             key={column.id}
